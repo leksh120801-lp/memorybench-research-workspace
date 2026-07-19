@@ -8,6 +8,28 @@ top-k). **MemoryBench** is the benchmark harness that proves it: 30 synthetic
 multi-session traces, scored against no-memory, full-history-stuffing, and
 naive top-k RAG baselines.
 
+## Deployment Proof
+
+[`backend/alibaba_cloud.py`](backend/alibaba_cloud.py) is the single, sole
+integration point for Alibaba Cloud OSS — the only file in the codebase that
+imports the `oss2` SDK. Two OSS operations are used, both on the `OSSClient`
+class defined there:
+
+- **`upload_bytes` / `upload_file`** — called from
+  [`backend/documents/ingest.py`](backend/documents/ingest.py) to store every
+  uploaded PDF in the configured OSS bucket.
+- **`backup_faiss_index`** (which itself calls `upload_file` twice) — called
+  from [`backend/documents/faiss_index.py`](backend/documents/faiss_index.py)
+  after every FAISS index write, backing up that session's vector index +
+  metadata to OSS.
+
+Both fall back to local disk when `OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET`
+aren't set (`OSSClient.is_configured()`), so the same code path runs offline
+in dev/CI and against real OSS in production — no branching required at the
+call sites. See [`backend/tests/test_alibaba_cloud.py`](backend/tests/test_alibaba_cloud.py)
+for tests against a mocked `oss2`, and [`docs/deploy.md`](docs/deploy.md) /
+[`backend/deploy/`](backend/deploy/) for the ECS + OSS provisioning steps.
+
 ## MemoryBench results
 
 30 synthetic multi-session traces with evolving user preferences and papers
@@ -69,7 +91,7 @@ cp .env.example .env   # fill in DASHSCOPE_API_KEY / OSS_* to enable live infere
 uvicorn backend.app:app --reload --port 8000
 
 # tests
-python -m pytest   # 32 tests: memory layer, bench harness, API, OSS integration — all mocked, no paid calls
+python -m pytest   # 36 tests: memory layer, bench harness, API, OSS integration — all mocked, no paid calls
 
 # frontend (separate terminal)
 cd frontend
@@ -84,14 +106,6 @@ instead of `text-embedding-v3`; without OSS credentials, uploaded PDFs and
 FAISS backups fall back to local disk. Every code path is the same either
 way — see `backend/state.py`.
 
-## Alibaba Cloud deployment proof
-
-[`backend/alibaba_cloud.py`](backend/alibaba_cloud.py) is the only file that
-calls the `oss2` SDK: it uploads ingested PDFs to an OSS bucket and backs up
-each session's FAISS index there. ECS provisioning + systemd/nginx config is
-in [`backend/deploy/`](backend/deploy/), walkthrough in
-[`docs/deploy.md`](docs/deploy.md).
-
 ## Project layout
 
 ```
@@ -101,7 +115,7 @@ backend/
   documents/  PDF ingest, chunking, FAISS
   routes/     FastAPI endpoints
   deploy/     ECS systemd + nginx config
-  tests/      pytest — 32 tests, all cloud calls mocked
+  tests/      pytest — 36 tests, all cloud calls mocked
 frontend/     Next.js UI — Chat / Memory Inspector / MemoryBench tabs
 docs/         architecture, deploy guide, submission writeup
 ```

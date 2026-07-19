@@ -6,6 +6,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Callable, Optional
 
+from ..alibaba_cloud import OSSClient
 from .chunker import chunk_text
 from .faiss_index import SessionVectorIndex
 
@@ -32,7 +33,7 @@ def ingest_pdf(
     file_bytes: bytes,
     embedding_fn: Callable[[str], list[float]],
     vector_index: SessionVectorIndex,
-    oss_client=None,
+    oss_client: Optional[OSSClient] = None,
     local_upload_dir: Optional[str] = None,
 ) -> IngestResult:
     """PDF upload -> OSS (or local fallback) -> chunk -> embed -> FAISS.

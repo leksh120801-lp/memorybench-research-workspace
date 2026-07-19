@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
 
@@ -11,10 +11,12 @@ class SessionVectorIndex:
     """One local FAISS index per session (flat inner-product over
     L2-normalized vectors == cosine similarity). Persisted to disk under
     `storage_dir`; `backup_fn` (if given, wired to OSSClient.backup_faiss_index
-    in backend/state.py) pushes each session's index to Alibaba Cloud OSS
-    after every add, satisfying "local FAISS, backed up to OSS"."""
+    in backend/state.py — see backend/alibaba_cloud.py) pushes each session's
+    index to Alibaba Cloud OSS after every add, satisfying "local FAISS,
+    backed up to OSS". Takes a plain callable rather than importing OSSClient
+    directly, so this module has no dependency on the OSS integration."""
 
-    def __init__(self, storage_dir: str, backup_fn: Optional[callable] = None):
+    def __init__(self, storage_dir: str, backup_fn: Optional[Callable[[str, str, str], dict]] = None):
         self.storage_dir = storage_dir
         self.backup_fn = backup_fn
         self._indexes: dict[str, "faiss.Index"] = {}
