@@ -7,6 +7,10 @@ from __future__ import annotations
 
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()  # loads .env from cwd if present; never overrides already-set env vars
+
 from .alibaba_cloud import OSSClient
 from .bench.lexical_embed import hashing_bow_embedding
 from .documents.faiss_index import SessionVectorIndex

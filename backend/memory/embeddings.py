@@ -41,8 +41,9 @@ class EmbeddingFn:
         return self.fn(text)
 
     def _call_dashscope(self, text: str) -> list[float]:
-        import dashscope
+        from ..dashscope_config import configure_dashscope
 
+        dashscope = configure_dashscope()
         resp = dashscope.TextEmbedding.call(model=self.model, input=text)
         if resp.status_code != 200:
             raise RuntimeError(f"DashScope embedding call failed: {resp.code} {resp.message}")

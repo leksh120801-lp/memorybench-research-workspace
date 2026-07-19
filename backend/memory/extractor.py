@@ -74,8 +74,9 @@ class MemoryExtractor:
         return candidates
 
     def _call_dashscope(self, user_text: str, context: dict):
-        import dashscope
+        from ..dashscope_config import configure_dashscope
 
+        dashscope = configure_dashscope()
         prompt = _EXTRACTION_PROMPT.format(user_text=user_text, assistant_text=context.get("assistant_text", ""))
         resp = dashscope.Generation.call(model=self.model, prompt=prompt, result_format="message")
         if resp.status_code != 200:

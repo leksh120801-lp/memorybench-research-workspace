@@ -3,13 +3,17 @@ from __future__ import annotations
 import os
 from typing import Optional
 
+from .dashscope_config import configure_dashscope
+
 
 class QwenClient:
-    """Thin wrapper around the DashScope SDK for Qwen models. NOT the
-    Anthropic API — per project rules, all inference goes through DashScope.
-    `is_configured()` lets callers degrade gracefully (extractive stub
-    answers, offline lexical embeddings) when no API key is present, so the
-    app runs and is demoable without incurring cost or requiring secrets."""
+    """Thin wrapper around the DashScope SDK for Qwen models — reads
+    DASHSCOPE_API_KEY (not a generic "qwen api key") and a configurable
+    DASHSCOPE_BASE_URL (defaults to the international endpoint; see
+    dashscope_config.py). `is_configured()` lets callers degrade gracefully
+    (extractive stub answers, offline lexical embeddings) when no API key is
+    present, so the app runs and is demoable without incurring cost or
+    requiring secrets."""
 
     def __init__(
         self,
@@ -27,9 +31,7 @@ class QwenClient:
         return bool(self.api_key)
 
     def chat(self, system_prompt: str, user_prompt: str) -> str:
-        import dashscope
-
-        dashscope.api_key = self.api_key
+        dashscope = configure_dashscope(self.api_key)
         resp = dashscope.Generation.call(
             model=self.reasoning_model,
             messages=[
@@ -43,11 +45,9 @@ class QwenClient:
         return resp.output.choices[0].message.content
 
     def extract(self, user_text: str, context: dict) -> str:
-        import dashscope
-
         from .memory.extractor import _EXTRACTION_PROMPT
 
-        dashscope.api_key = self.api_key
+        dashscope = configure_dashscope(self.api_key)
         prompt = _EXTRACTION_PROMPT.format(user_text=user_text, assistant_text=context.get("assistant_text", ""))
         resp = dashscope.Generation.call(model=self.extraction_model, prompt=prompt, result_format="message")
         if resp.status_code != 200:
@@ -55,9 +55,7 @@ class QwenClient:
         return resp.output.choices[0].message.content
 
     def embed(self, text: str) -> list[float]:
-        import dashscope
-
-        dashscope.api_key = self.api_key
+        dashscope = configure_dashscope(self.api_key)
         resp = dashscope.TextEmbedding.call(model=self.embedding_model, input=text)
         if resp.status_code != 200:
             raise RuntimeError(f"DashScope embedding call failed: {resp.code} {resp.message}")

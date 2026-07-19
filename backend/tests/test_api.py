@@ -28,7 +28,13 @@ from backend.llm import QwenClient
 
 
 @pytest.fixture()
-def client(tmp_path):
+def client(tmp_path, monkeypatch):
+    # Hermetic regardless of what's in the developer's ambient .env (backend.state
+    # calls load_dotenv() on import) — tests must never pick up real credentials.
+    monkeypatch.delenv("DASHSCOPE_API_KEY", raising=False)
+    monkeypatch.delenv("OSS_ACCESS_KEY_ID", raising=False)
+    monkeypatch.delenv("OSS_ACCESS_KEY_SECRET", raising=False)
+
     test_manager = MemoryManager(
         extractor=MemoryExtractor(llm_fn=lambda *_: []),
         embedding_fn=hashing_bow_embedding,
