@@ -1,0 +1,36 @@
+flowchart TB
+    FE["Next.js frontend<br/>Chat · Memory Inspector · MemoryBench"]
+
+    subgraph Backend["FastAPI backend — on Alibaba Cloud ECS"]
+        API["Routes<br/>sessions · documents · chat · memory · bench"]
+        CHAT["chat.py"]
+        MEM["MemoryManager<br/>episodic · semantic · preference · working"]
+        DOC["PDF ingest<br/>chunk + embed"]
+        BENCH["MemoryBench harness"]
+    end
+
+    subgraph Qwen["Qwen Cloud — DashScope"]
+        QMAX["qwen-max<br/>chat reasoning"]
+        QPLUS["qwen-plus<br/>memory extraction"]
+        QEMB["text-embedding-v3<br/>vectors"]
+    end
+
+    FAISS[("FAISS<br/>vector index")]
+    OSS["Alibaba Cloud OSS<br/>PDFs + FAISS backup"]
+
+    FE -- REST --> API
+    API --> CHAT
+    API --> MEM
+    API --> DOC
+    API --> BENCH
+
+    CHAT --> MEM
+    CHAT --> DOC
+    CHAT -- chat --> QMAX
+    MEM -- extract --> QPLUS
+    MEM -- embed --> QEMB
+    DOC -- embed --> QEMB
+
+    DOC -- upload PDF --> OSS
+    DOC -- write/query --> FAISS
+    FAISS -- backup --> OSS

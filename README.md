@@ -40,6 +40,10 @@ see [`docs/submission.md`](docs/submission.md) for why.
 
 ## Architecture
 
+![Architecture: Qwen Cloud (DashScope) -> FastAPI backend on ECS -> OSS (PDF + FAISS backup) + FAISS vector store -> Next.js frontend](docs/architecture.png)
+
+Rendered from [`docs/architecture.mmd`](docs/architecture.mmd) (mermaid source, kept for editing) via `mmdc`; the PNG is the deliverable since Devpost only accepts pdf/png/jpg/jpeg uploads, not mermaid source. A PDF version is also at [`docs/architecture.pdf`](docs/architecture.pdf).
+
 ```mermaid
 flowchart LR
     FE["Next.js frontend"] -- REST --> API["FastAPI backend"]
