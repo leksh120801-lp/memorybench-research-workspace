@@ -25,11 +25,10 @@ yarn-error.log*
 *.pem
 *.key
 
-# FAISS indexes / vector data
+# Runtime data: FAISS indexes, uploaded PDFs, memory/session JSON stores
 *.faiss
 *.index
-backend/data/faiss/
-backend/data/uploads/
+backend/data/
 
 # Benchmark output
 /bench/output/
