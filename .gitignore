@@ -34,6 +34,9 @@ backend/data/
 /bench/output/
 backend/bench/output/
 
+# Build artifacts
+/dist/
+
 # OS
 .DS_Store
 Thumbs.db
